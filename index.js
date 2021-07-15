@@ -1,32 +1,20 @@
 import express from "express";
 import mongoose from "mongoose";
-import { User } from "./models/users.js";
+import { userRouter } from "./routes/user.js";
 const app = express();
 
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
+// const url = process.env.MONGODB_URI || "mongodb://localhost/RecipeData";
 
-// const USERS = [
-//   {
-//     createdAt: "2021-07-05T08:28:06.683Z",
-//     name: "ikram",
-//     password: "password 1",
-//     id: "1",
-//   },
+// Opened Connection to loacal DB, movieData - db name
+// const url = "mongodb://localhost/MovieData";
 
-//   {
-//     createdAt: "2021-07-05T08:28:06.683Z",
-//     name: "ikram 2",
-//     password: "password 2",
-//     id: "2",
-//   },
-// ];
+// Opened Connection to mongo atlas DB, movieData - db name
+const url = "mongodb+srv://ikram:ikram98@cluster0.rlfdm.mongodb.net/BookMyShow";
 
-// Opened Connection to DB, movieData - db name
-const url = "mongodb://localhost/MovieData";
-
-mongoose.connect(url, { useNewUrlParser: true });
+mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true });
 const con = mongoose.connection;
-con.on("open", () => console.log("MongoDB is connected"));
+con.on("open", () => console.log("MongoDB is connected "));
 
 // middleware
 app.use(express.json());
@@ -35,56 +23,6 @@ app.get("/", (request, respone) => {
   respone.send(" hello hi");
 });
 
-app.get("/users", async (request, respone) => {
-  const Users = await User.find().sort({ userid: 1 });
-  // console.log(Users);
-  respone.send(Users);
-});
-
-app.get("/users/:id", async (request, respone) => {
-  const { id } = request.params;
-  // const user = USERS.find((data) => data.id === id);
-  const user = await Users.find({ id: id });
-  respone.send(user);
-});
-
-// add users
-app.post("/users", async (request, respone) => {
-  const addUser = request.body;
-  console.log(addUser);
-  // USERS.push(addUser);
-  // console.log(addUser);
-  // Users.insertMany;
-  const user = new Users({
-    createdAt: addUser.createdAt,
-    name: addUser.name,
-    avatar: addUser.avatar,
-    userid: addUser.userid,
-    password: addUser.password,
-    id: addUser.id,
-  });
-  // or this can be used
-  // const user = new Users(addUser);
-  try {
-    const newUser = await user.save();
-    respone.send(newUser);
-  } catch (err) {
-    respond.staus(500);
-    respone.send(err);
-  }
-});
-
-app.delete("/users/:id", async (request, respone) => {
-  const { id } = request.params;
-  // const user = USERS.find((data) => data.id === id);
-  const user = await Users.findById(id);
-  await user.remove();
-  try {
-    respone.send({ message: "deleted the user" });
-  } catch (err) {
-    respond.staus(500);
-    respone.send("user is missing");
-  }
-});
+app.use("/users", userRouter);
 
 app.listen(PORT, () => console.log("server is started"));
