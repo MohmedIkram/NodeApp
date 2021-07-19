@@ -1,4 +1,5 @@
-import express from "express";
+import express, { response } from "express";
+import bcrypt from "bcrypt";
 import { User } from "../models/users.js";
 
 const router = express.Router();
@@ -35,6 +36,17 @@ router
     const Users = await User.find().sort({ userid: 1 });
     // console.log(Users);
     respone.send(Users);
+  })
+  //to get all the users using query params
+  .get(async (request, respone) => {
+    console.log("before", request.query);
+    if (request.query.name) {
+      request.query.name = new RegExp("^" + request.query.name);
+    }
+    console.log("after", request.query);
+    const Users = await User.find(request.query);
+    // console.log(Users);
+    respone.send(Users);
   });
 
 router
@@ -48,20 +60,102 @@ router
     // const user = USERS.find((data) => data.id === id);
     const user = await User.findOne({ id: id });
     respone.send(user);
+  })
+  // delete particular user by id
+  .delete(async (request, respone) => {
+    const { id } = request.params;
+    // const user = USERS.find((data) => data.id === id);
+    const user = await User.findById(id);
+    await user.remove();
+    try {
+      respone.send({ ...user, message: "deleted the user" });
+    } catch (err) {
+      respond.staus(500);
+      respone.send("user is missing");
+    }
+  })
+  .patch(async (request, respone) => {
+    const { id } = request.params;
+    const { name, avatar } = request.body;
+
+    try {
+      const user = await User.findById(id);
+      if (name) {
+        user.name = name;
+      }
+      if (avatar) {
+        user.avatar = avatar;
+      }
+      await user.save();
+      respone.send(user);
+    } catch (err) {
+      respone.status(500);
+      respone.send(err);
+    }
   });
 
-// delete particular user by id
-delete (async (request, respone) => {
-  const { id } = request.params;
-  // const user = USERS.find((data) => data.id === id);
-  const user = await User.findById(id);
-  await user.remove();
+router.route("/login").patch(async (request, respone) => {
+  const { name, password } = request.body;
   try {
-    respone.send({ ...user, message: "deleted the user" });
+    const user = await User.findOne({ name: name });
+    const inDBPassword = user.password;
+    const isMatch = await bcrypt.compare(password, inDBPassword);
+    if (!isMatch) {
+      respone.status(500);
+      response.send({ message: "invalid credential" });
+    } else {
+      response.send({ message: "succesfull login" });
+    }
   } catch (err) {
-    respond.staus(500);
-    respone.send("user is missing");
+    respone.status(500);
+    respone.send(err);
+  }
+});
+
+// Creating user
+router.route("/signup").post(async (request, respone) => {
+  const { name, password, avatar, createdAt } = request.body;
+  try {
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
+    console.log(passwordHash);
+
+    const user = new User({
+      name,
+      password: passwordHash,
+      avatar,
+      createdAt,
+    });
+
+    await user.save();
+    // db to store it
+    respone.send(user);
+  } catch (err) {
+    respone.status(500);
+    respone.send(err);
   }
 });
 
 export const userRouter = router;
+
+// async function genHach() {
+//   const password = "ikram007";
+//   const salt = await bcrypt.genSalt(10);
+//   const passwordHash = await bcrypt.hash(password, salt);
+//   console.log(salt, passwordHash);
+// }
+// genHach();
+
+// const inDBPassword =
+//   "$2b$10$QhtWYp421VUhByt8C2lXtunL0Iquvl9LcP9dCBW48IXR3H80YIZZS";
+// async function verifyUser() {
+//   const userPassword = "ikram007";
+//   const isMatch = await bcrypt.compare(userPassword, inDBPassword);
+
+//   if (!isMatch) {
+//     console.log("invalid credentials");
+//   } else {
+//     console.log("succesful login");
+//   }
+// }
+// verifyUser();
