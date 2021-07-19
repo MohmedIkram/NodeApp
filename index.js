@@ -4,13 +4,13 @@ import { userRouter } from "./routes/user.js";
 const app = express();
 
 const PORT = process.env.PORT || 5000;
-// const url = process.env.MONGODB_URI || "mongodb://localhost/RecipeData";
+// const url = process.env.MONGODB_KEY || "mongodb://localhost/MovieData" ||  mongodb+srv://ikram:ikram98@cluster0.rlfdm.mongodb.net/BookMyShow;
 
 // Opened Connection to loacal DB, movieData - db name
 // const url = "mongodb://localhost/MovieData";
 
 // Opened Connection to mongo atlas DB, movieData - db name
-const url = "mongodb+srv://ikram:ikram98@cluster0.rlfdm.mongodb.net/BookMyShow";
+const url = process.env.MONGODB_KEY || "mongodb://localhost/MovieData";
 
 mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true });
 const con = mongoose.connection;
