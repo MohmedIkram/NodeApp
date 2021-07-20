@@ -1,6 +1,7 @@
 import express, { response } from "express";
 import bcrypt from "bcrypt";
 import { User } from "../models/users.js";
+import jwt from "jsonwebtoken";
 
 const router = express.Router();
 router
@@ -76,15 +77,15 @@ router
   })
   .patch(async (request, respone) => {
     const { id } = request.params;
-    const { name, avatar } = request.body;
+    const { name, password } = request.body;
 
     try {
       const user = await User.findById(id);
       if (name) {
         user.name = name;
       }
-      if (avatar) {
-        user.avatar = avatar;
+      if (password) {
+        user.password = password;
       }
       await user.save();
       respone.send(user);
@@ -94,7 +95,7 @@ router
     }
   });
 
-router.route("/login").patch(async (request, respone) => {
+router.route("/login").post(async (request, respone) => {
   const { name, password } = request.body;
   try {
     const user = await User.findOne({ name: name });
@@ -104,7 +105,9 @@ router.route("/login").patch(async (request, respone) => {
       respone.status(500);
       response.send({ message: "invalid credential" });
     } else {
-      response.send({ message: "succesfull login" });
+      const token = jwt.sign({ id: user._id }, "secretkey");
+      console.log(token);
+      response.send({ token: token, message: "succesfull login" });
     }
   } catch (err) {
     respone.status(500);
