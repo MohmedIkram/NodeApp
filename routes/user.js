@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 const router = express.Router();
 router
   .route("/")
+
   // add users
   .post(async (request, respone) => {
     const addUser = request.body;
@@ -69,7 +70,7 @@ router
     const user = await User.findById(id);
     await user.remove();
     try {
-      respone.send({ ...user, message: "deleted the user" });
+      respone.send({ ...user.toObject(), message: "deleted the user" });
     } catch (err) {
       respond.staus(500);
       respone.send("user is missing");
@@ -98,7 +99,7 @@ router
 router.route("/login").post(async (request, respone) => {
   const { name, password } = request.body;
   try {
-    const user = await User.findOne({ name: name });
+    const user = await User.find({ name: name });
     const inDBPassword = user.password;
     const isMatch = await bcrypt.compare(password, inDBPassword);
     if (!isMatch) {
@@ -107,7 +108,11 @@ router.route("/login").post(async (request, respone) => {
     } else {
       const token = jwt.sign({ id: user._id }, "secretkey");
       console.log(token);
-      response.send({ token: token, message: "succesfull login" });
+      response.send({
+        ...user.toObject(),
+        token: token,
+        message: "succesfull login",
+      });
     }
   } catch (err) {
     respone.status(500);
